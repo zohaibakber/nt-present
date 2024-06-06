@@ -14,12 +14,6 @@ interface RSAKeyPair {
   phi: string;
   e: string;
   d: string;
-  p_base64: string;
-  q_base64: string;
-  n_base64: string;
-  phi_base64: string;
-  e_base64: string;
-  d_base64: string;
 }
 
 type BaseFormat = {
