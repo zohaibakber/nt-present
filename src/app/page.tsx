@@ -5,10 +5,15 @@ export default function Home() {
   return (
     <>
       <div className="w-full h-full bg-gray-100 p-8">
-        <h1 className="text-3xl font-bold mb-4">
-          RSA Encryption and Decryption
-        </h1>
-
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold mb-4">
+            RSA Encryption and Decryption
+          </h1>
+          <div className="flex gap-2 items-center">
+            <p className="font-semibold">Source Code</p>
+            <a href="https://github.com/zohaibkakber/nt-present">Github</a>
+          </div>
+        </div>
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-2">Overview</h2>
           <p className="mb-4">
