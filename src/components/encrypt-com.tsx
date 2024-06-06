@@ -9,13 +9,18 @@ import { Input } from "./ui/input";
 export function EncryptCom() {
   const [res, setRes] = useState<string | undefined>();
   const [publicKey, setPublicKey] = useState("");
+  const [exponent, setExponent] = useState("");
   const [message, setMessage] = useState("");
 
   async function encryptMessage() {
-    const cleanedPublicKey = publicKey.replace(/[()]/g, "");
-    const [n, e] = cleanedPublicKey.split(",").map((num) => BigInt(num.trim()));
-    const encryptedMessage = await encrypt(message, e, n);
-    setRes(encryptedMessage);
+    try {
+      const encryptedMessage = await encrypt(message, publicKey, exponent);
+      console.log(encryptedMessage);
+      setRes(encryptedMessage);
+    } catch (error) {
+      console.error("Error encrypting message:", error);
+      setRes("Error encrypting message.");
+    }
   }
   return (
     <div className="w-full h-fit bg-primary-foreground rounded-lg border p-4">
@@ -24,6 +29,11 @@ export function EncryptCom() {
       </div>
       <div className="space-y-4">
         <form className="space-y-4">
+          <Input
+            placeholder="Exponent"
+            value={exponent}
+            onChange={(e) => setExponent(e.target.value)}
+          />
           <Input
             placeholder="Public Key"
             value={publicKey}

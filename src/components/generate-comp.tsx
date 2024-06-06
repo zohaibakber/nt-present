@@ -7,27 +7,61 @@ import { Badge } from "./ui/badge";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
-type RSAParams = {
-  p: bigint;
-  q: bigint;
-  n: bigint;
-  phi: bigint;
-  e: bigint;
-  d: bigint;
+interface RSAKeyPair {
+  p: string;
+  q: string;
+  n: string;
+  phi: string;
+  e: string;
+  d: string;
+  p_base64: string;
+  q_base64: string;
+  n_base64: string;
+  phi_base64: string;
+  e_base64: string;
+  d_base64: string;
+}
+
+type BaseFormat = {
+  base: "hex" | "base64";
 };
 
 export function GenerateComp() {
-  const [res, setRes] = useState<RSAParams | undefined>();
+  const [res, setRes] = useState<RSAKeyPair | undefined>();
+  const [format, setFormat] = useState<BaseFormat>({ base: "hex" });
+
   async function getRandomPrimes() {
     const res = await generateRandomPrimes();
     console.log(res);
     setRes(res);
   }
 
+  function convertToBase(value: string, base: "hex" | "base64") {
+    if (base === "hex") {
+      return value;
+    } else if (base === "base64") {
+      // Convert hex string to Buffer, then to Base64
+      const buffer = Buffer.from(value, "hex");
+      return buffer.toString("base64");
+    } else {
+      return value;
+    }
+  }
+
   return (
     <div className="w-full h-fit bg-primary-foreground rounded-lg border p-4">
-      <div className="flex justify-end p-2">
-        <Button onClick={() => getRandomPrimes()}>Generate</Button>
+      <div className="flex justify-end p-2 gap-4">
+        <Badge variant={"outline"}>{format.base}</Badge>
+        <Button
+          onClick={() =>
+            setFormat((prev) => ({
+              base: prev.base === "hex" ? "base64" : "hex",
+            }))
+          }
+        >
+          Toggle
+        </Button>
+        <Button onClick={getRandomPrimes}>Generate</Button>
       </div>
       <div>
         {res && (
@@ -35,43 +69,51 @@ export function GenerateComp() {
             <SubCard
               title="Prime P"
               description="Random prime number"
-              value={res.p.toString()}
+              value={convertToBase(res.p, format.base)}
             />
             <SubCard
               title="Prime Q"
               description="Random prime number"
-              value={res.q.toString()}
+              value={convertToBase(res.q, format.base)}
             />
             <SubCard
               title="N"
               description="Product of P and Q"
-              value={res.n.toString()}
+              value={convertToBase(res.n, format.base)}
             />
             <SubCard
               title="Phi"
               description="Euler's totient function"
-              value={res.phi.toString()}
+              value={convertToBase(res.phi, format.base)}
             />
             <SubCard
               title="E"
               description="Public key exponent"
-              value={res.e.toString()}
+              value={convertToBase(res.e, format.base)}
             />
             <SubCard
               title="D"
               description="Private key exponent"
-              value={res.d.toString()}
+              value={convertToBase(res.d, format.base)}
             />
             <SubCard
               title="Public Key"
               description="Public key pair"
-              value={`(${res.e}, ${res.n})`}
+              value={
+                convertToBase(res.e, format.base) +
+                ", " +
+                convertToBase(res.n, format.base)
+              }
               copy
             />
             <SubCard
               title="Private Key"
               description="Private key pair"
-              value={`(${res.d}, ${res.n})`}
+              value={
+                convertToBase(res.d, format.base) +
+                ", " +
+                convertToBase(res.n, format.base)
+              }
               copy
             />
           </div>

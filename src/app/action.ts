@@ -2,49 +2,71 @@
 
 import { generatePrimeSync } from "crypto";
 
-export async function generateRandomPrimes() {
-  const p = generatePrimeSync(512, { bigint: true });
-  const q = generatePrimeSync(512, { bigint: true });
+// Helper functions for encoding/decoding
+function toHex(bigint: bigint): string {
+  return bigint.toString(16);
+}
 
-  const n = BigInt(p) * BigInt(q);
-  const phi = (BigInt(p) - 1n) * (BigInt(q) - 1n);
+function fromHex(hexString: string): bigint {
+  // Remove any spaces and ensure the string only contains valid hexadecimal characters
+  const sanitizedHexString = hexString.replace(/\s+/g, "").toLowerCase();
+  if (!/^[0-9a-f]+$/.test(sanitizedHexString)) {
+    throw new Error("Invalid hexadecimal string");
+  }
+  return BigInt(`0x${sanitizedHexString}`);
+} // Define the return type for the generateRandomPrimes function
+
+interface RSAKeyPair {
+  p: string;
+  q: string;
+  n: string;
+  phi: string;
+  e: string;
+  d: string;
+}
+
+export async function generateRandomPrimes(): Promise<RSAKeyPair> {
+  const p = generatePrimeSync(1024, { bigint: true });
+  const q = generatePrimeSync(1024, { bigint: true });
+
+  const n = p * q;
+  const phi = (p - 1n) * (q - 1n);
 
   let e = 65537n;
-  while (gcd(e, phi) != 1n) {
+  while (gcd(e, phi) !== 1n) {
     e += 2n;
   }
 
   const d = modInverse(e, phi);
 
   return {
-    p: p,
-    q: q,
-    n: n,
-    phi: phi,
-    e: e,
-    d: d,
+    p: toHex(p),
+    q: toHex(q),
+    n: toHex(n),
+    phi: toHex(phi),
+    e: toHex(e),
+    d: toHex(d),
   };
 }
 
 function gcd(a: bigint, b: bigint): bigint {
-  if (!b) {
+  if (b === 0n) {
     return a;
   }
-
   return gcd(b, a % b);
 }
 
-function modInverse(a: bigint, m: bigint) {
+function modInverse(a: bigint, m: bigint): bigint {
   let m0 = m;
   let y = 0n;
   let x = 1n;
 
-  if (m == 1n) {
+  if (m === 1n) {
     return 0n;
   }
 
   while (a > 1n) {
-    let q = a / m;
+    const q = a / m;
     let t = m;
 
     m = a % m;
@@ -62,7 +84,7 @@ function modInverse(a: bigint, m: bigint) {
   return x;
 }
 
-function modPow(base: bigint, exponent: bigint, modulus: bigint) {
+function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
   if (modulus === 1n) return 0n;
   let result = 1n;
   base = base % modulus;
@@ -74,31 +96,46 @@ function modPow(base: bigint, exponent: bigint, modulus: bigint) {
   return result;
 }
 
-export async function encrypt(message: string, e: bigint, n: bigint) {
+export async function encrypt(
+  message: string,
+  e_hex: string,
+  n_hex: string
+): Promise<string> {
+  const e = fromHex(e_hex);
+  const n = fromHex(n_hex);
+
   let encrypted = "";
   for (let i = 0; i < message.length; i++) {
-    let charCode = BigInt(message.charCodeAt(i));
-    let encryptedCharCode = modPow(charCode, e, n);
-    encrypted += encryptedCharCode.toString().padStart(3, "0");
+    const charCode = BigInt(message.charCodeAt(i));
+    const encryptedCharCode = modPow(charCode, e, n);
+    encrypted += encryptedCharCode.toString(16).padStart(4, "0");
   }
 
   return encrypted;
 }
 
-export async function decrypt(encrypted: string, d: bigint, n: bigint) {
-  console.log({
-    encrypted,
-    d,
-    n,
-  });
+export async function decrypt(
+  encrypted: string,
+  d_hex: string,
+  n_hex: string
+): Promise<string> {
+  const d = fromHex(d_hex);
+  const n = fromHex(n_hex);
+
+  console.log(`Decrypting with d: ${d}, n: ${n}`); // Diagnostic log
+
   let decrypted = "";
-  for (let i = 0; i < encrypted.length; i += 3) {
-    let encryptedCharCode = BigInt(encrypted.slice(i, i + 3));
-    let decryptedCharCode = modPow(encryptedCharCode, d, n);
-    console.log(decryptedCharCode);
-    console.log(typeof decryptedCharCode);
+  for (let i = 0; i < encrypted.length; i += 4) {
+    const encryptedCharCode = BigInt(`0x${encrypted.slice(i, i + 4)}`);
+    const decryptedCharCode = modPow(encryptedCharCode, d, n);
+
+    if (Number(decryptedCharCode) > 0xffff) {
+      console.error(`Invalid character code: ${decryptedCharCode}`);
+      continue; // Skip invalid character codes
+    }
     decrypted += String.fromCharCode(Number(decryptedCharCode));
   }
-  console.log(decrypted);
+  console.log(`Decrypted: ${decrypted}`); // Diagnostic log
+
   return decrypted;
 }

@@ -9,20 +9,16 @@ import { useState } from "react";
 export function DecryptComp() {
   const [res, setRes] = useState<string | undefined>();
   const [privateKey, setPrivateKey] = useState("");
+  const [d, setD] = useState("");
   const [encryptedMessage, setEncryptedMessage] = useState("");
 
   async function decryptMessage() {
-    const cleanedPrivateKey = privateKey.replace(/[()]/g, "");
-    const [n, d] = cleanedPrivateKey
-      .split(",")
-      .map((num) => BigInt(num.trim()));
-    console.log({
-      n,
-      d,
-    });
-    const decryptedMessage = await decrypt(encryptedMessage, d, n);
-    console.log(decryptedMessage);
-    setRes(decryptedMessage);
+    try {
+      const decrypted = await decrypt(encryptedMessage, d, privateKey);
+      setRes(decrypted);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   return (
@@ -32,6 +28,12 @@ export function DecryptComp() {
       </div>
       <div className="space-y-4">
         <form className="space-y-4">
+          <Input
+            placeholder="D"
+            value={d}
+            onChange={(e) => setD(e.target.value)}
+          />
+
           <Input
             placeholder="Private Key"
             value={privateKey}

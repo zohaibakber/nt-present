@@ -15,6 +15,10 @@ export const metadata: Metadata = {
 const links = [
   {
     href: "/",
+    text: "Home",
+  },
+  {
+    href: "/generate",
     text: "Generate",
   },
   {
